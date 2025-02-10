@@ -6,12 +6,17 @@
 #include <cstdlib>
 #include <vector>
 #include <optional>
+#include <set>
 
 const uint32_t WIDTH = 1600;
 const uint32_t HEIGHT = 900;
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
+};
+
+const std::vector<const char*> deviceExtensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
 #ifndef NDEBUG
@@ -185,9 +190,34 @@ private:
         //Queue family should support VK_QUEUE_GRAPHICS_BIT
         QueueFamilyIndices indices = findQueueFamilies(device);
 
+        bool extensionsSupported = checkDeviceExtensionSupport(device);
+
+
         //Only consider a dedicated GPU and ones that support geometry shaders
         return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU &&
             deviceFeatures.geometryShader && indices.isComplete();
+
+
+    }
+
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device) {
+        uint32_t extensionCount;
+        //Get number of extensions
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, nullptr);
+
+        //Create vector with size extensionCount
+        std::vector<VkExtensionProperties> availableExtensions(extensionCount);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensionCount, availableExtensions.data());
+
+        std::set<std::string> requiredExtensions(deviceExtensions.begin(), deviceExtensions.end());
+
+        for (const auto& extension : availableExtensions) {
+            requiredExtensions.erase(extension.extensionName);
+        }
+
+        return requiredExtensions.empty();
+
+        return true;
     }
 
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
