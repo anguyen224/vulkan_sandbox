@@ -1,6 +1,8 @@
+#define VK_USE_PLATFORM_WIN32_KHR
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -72,6 +74,8 @@ private:
     }
 
     void cleanup() {
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+
         vkDestroyInstance(instance, nullptr);
 
         vkDestroyDevice(device, nullptr);
@@ -223,9 +227,9 @@ private:
     QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
         QueueFamilyIndices indices;
         uint32_t queueFamilyCount = 0;
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         //Get the count first
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
 
         //Populate the vector with the queue families
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
@@ -282,11 +286,20 @@ private:
 
     }
 
+    void createSurface() {
+        //Add the window and process handles for Surface info
+        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface!");
+        }
+    }
+
     GLFWwindow* window;
     VkInstance instance;
     VkDevice device;
     VkPhysicalDevice physicalDevice;
     VkQueue graphicsQueue; //Handle to graphics queue
+    VkSurfaceKHR surface;
+    VkQueue presentQueue; //Presentation Queue
 };
 
 int main() {
